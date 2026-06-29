@@ -1,0 +1,16 @@
+# build output
+/sbx
+/dist/
+
+# go test artifacts
+*.test
+*.out
+coverage*
+
+# sbx sidecar (per-deployment, not committed)
+.sbx.json
+
+# editor / OS
+.DS_Store
+.idea/
+.vscode/
