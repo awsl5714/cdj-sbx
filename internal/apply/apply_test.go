@@ -254,6 +254,24 @@ func TestVerifyDetectsInvariant(t *testing.T) {
 	}
 }
 
+func TestLockOpenFailureIsIOError(t *testing.T) {
+	if os.Geteuid() == 0 {
+		t.Skip("root bypasses directory permissions")
+	}
+	o, cfg := setupEnv(t, true)
+	dir := filepath.Dir(cfg)
+	if err := os.Chmod(dir, 0o500); err != nil { // no write: lock file cannot be created
+		t.Fatal(err)
+	}
+	defer func() { _ = os.Chmod(dir, 0o700) }()
+
+	_, err := AddUser(o, "bob", "u-bob")
+	var ae *Error
+	if !errors.As(err, &ae) || ae.Kind != KindIO {
+		t.Fatalf("want io_error for unwritable lock dir, got %v", err)
+	}
+}
+
 func TestVerifyOK(t *testing.T) {
 	o, _ := setupEnv(t, true)
 	if err := Verify(o); err != nil {

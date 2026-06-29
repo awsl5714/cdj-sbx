@@ -182,7 +182,10 @@ func Reload(o Options) error {
 func run(o Options, action, user, uuid string, mut mutation) (*Result, error) {
 	unlock, err := acquireLock(o.lockPath())
 	if err != nil {
-		return nil, &Error{Kind: KindLockTimeout, Detail: "another sbx process holds the lock", Err: err}
+		if errors.Is(err, errLocked) {
+			return nil, &Error{Kind: KindLockTimeout, Detail: "another sbx process holds the lock", Err: err}
+		}
+		return nil, &Error{Kind: KindIO, Detail: "cannot acquire lock: " + err.Error(), Err: err}
 	}
 	defer unlock()
 
@@ -226,6 +229,7 @@ func run(o Options, action, user, uuid string, mut mutation) (*Result, error) {
 		return nil, &Error{Kind: KindIO, Detail: err.Error(), Err: err}
 	}
 	removeTmp = false
+	fsyncDir(o.ConfigPath)
 
 	if !o.NoReload {
 		if err := o.reload(); err != nil {
@@ -281,7 +285,20 @@ func rollbackConfig(path string, old []byte) error {
 		return err
 	}
 	removeTmp = false
+	fsyncDir(path)
 	return nil
+}
+
+// fsyncDir flushes the parent directory entry so a rename is durable across a
+// crash or power loss. Best-effort: durability is improved, never required for
+// the call to succeed.
+func fsyncDir(path string) {
+	d, err := os.Open(filepath.Dir(path))
+	if err != nil {
+		return
+	}
+	_ = d.Sync()
+	_ = d.Close()
 }
 
 func (o Options) reload() error {
