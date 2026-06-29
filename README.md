@@ -26,6 +26,22 @@ go install github.com/awsl5714/cdj-sbx/cmd/sbx@latest
 
 Or grab a prebuilt binary from [Releases](https://github.com/awsl5714/cdj-sbx/releases).
 
+## Server bootstrap
+
+[`scripts/deploy.sh`](scripts/deploy.sh) provisions a fresh Ubuntu 22.04 box from
+scratch: BBR tuning, sing-box install, a generated REALITY + Hysteria2 config,
+firewall (SSH-port-aware, won't lock you out), `fail2ban`, the `sbx` binary, and
+`sbx init`. It is idempotent and never overwrites an existing config.
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/awsl5714/cdj-sbx/main/scripts/deploy.sh -o deploy.sh
+# review it, then:
+sudo bash deploy.sh
+```
+
+It prints the first user's `vless://` / `hysteria2://` links at the end. It does
+**not** touch SSH auth (configure key-only login yourself to avoid lock-out).
+
 ## Quickstart
 
 ```sh
