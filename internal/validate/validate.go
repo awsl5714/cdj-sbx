@@ -34,15 +34,33 @@ func (e *CheckError) Error() string {
 	return "sing-box check failed"
 }
 
-// CheckFile runs `sing-box check -c <path>` and returns a *CheckError on failure.
+// ExecError means the validator binary could not be executed (missing, not
+// executable, ...) — an environment failure, distinct from the validator
+// running and rejecting the config (*CheckError). Callers map it to io_error,
+// not schema_invalid.
+type ExecError struct {
+	Bin string
+	Err error
+}
+
+func (e *ExecError) Error() string {
+	return fmt.Sprintf("could not run validator %q: %v", e.Bin, e.Err)
+}
+
+func (e *ExecError) Unwrap() error { return e.Err }
+
+// CheckFile runs `sing-box check -c <path>`. It returns *CheckError when the
+// validator ran and rejected the config, and *ExecError when the validator
+// could not be executed at all.
 func (c *Checker) CheckFile(path string) error {
 	cmd := exec.Command(c.Bin, "check", "-c", path)
 	out, err := cmd.CombinedOutput()
-	if err != nil {
-		if errors.Is(err, exec.ErrNotFound) {
-			return &CheckError{Output: fmt.Sprintf("binary %q not found on PATH", c.Bin)}
-		}
+	if err == nil {
+		return nil
+	}
+	var exitErr *exec.ExitError
+	if errors.As(err, &exitErr) {
 		return &CheckError{Output: strings.TrimSpace(string(out))}
 	}
-	return nil
+	return &ExecError{Bin: c.Bin, Err: err}
 }

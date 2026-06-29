@@ -272,6 +272,16 @@ func TestLockOpenFailureIsIOError(t *testing.T) {
 	}
 }
 
+func TestValidatorMissingIsIOError(t *testing.T) {
+	o, _ := setupEnv(t, true)
+	o.Checker = validate.New(filepath.Join(t.TempDir(), "no-such-sing-box"))
+	_, err := AddUser(o, "bob", "u-bob")
+	var ae *Error
+	if !errors.As(err, &ae) || ae.Kind != KindIO {
+		t.Fatalf("want io_error when validator cannot run, got %v", err)
+	}
+}
+
 func TestVerifyOK(t *testing.T) {
 	o, _ := setupEnv(t, true)
 	if err := Verify(o); err != nil {

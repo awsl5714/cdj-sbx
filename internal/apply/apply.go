@@ -152,7 +152,7 @@ func ListUsers(o Options) ([]model.User, error) {
 // Verify runs schema + invariant checks against the live config without mutating.
 func Verify(o Options) error {
 	if err := o.Checker.CheckFile(o.ConfigPath); err != nil {
-		return &Error{Kind: KindSchema, Detail: err.Error(), Err: err}
+		return checkErr(err)
 	}
 	c, err := config.Load(o.ConfigPath)
 	if err != nil {
@@ -164,7 +164,7 @@ func Verify(o Options) error {
 // Reload validates the live config then reloads the service.
 func Reload(o Options) error {
 	if err := o.Checker.CheckFile(o.ConfigPath); err != nil {
-		return &Error{Kind: KindSchema, Detail: err.Error(), Err: err}
+		return checkErr(err)
 	}
 	c, err := config.Load(o.ConfigPath)
 	if err != nil {
@@ -211,7 +211,7 @@ func run(o Options, action, user, uuid string, mut mutation) (*Result, error) {
 	}()
 
 	if err := o.Checker.CheckFile(tmp); err != nil {
-		return nil, &Error{Kind: KindSchema, Detail: err.Error(), Err: err}
+		return nil, checkErr(err)
 	}
 	if err := invariantErr(c, o.Managed); err != nil {
 		return nil, err
@@ -336,6 +336,17 @@ func invariantErr(c *config.Config, managed []Managed) error {
 		return &Error{Kind: kind, Detail: err.Error(), Err: err}
 	}
 	return nil
+}
+
+// checkErr maps a CheckFile failure to the right kind: a validator that ran and
+// rejected the config is schema_invalid; a validator that could not run at all
+// (missing binary, etc.) is an environment/io error.
+func checkErr(err error) *Error {
+	var ee *validate.ExecError
+	if errors.As(err, &ee) {
+		return &Error{Kind: KindIO, Detail: err.Error(), Err: err}
+	}
+	return &Error{Kind: KindSchema, Detail: err.Error(), Err: err}
 }
 
 func mapMutateErr(err error) *Error {
