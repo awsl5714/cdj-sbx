@@ -8,7 +8,9 @@ package link
 import (
 	"encoding/base64"
 	"fmt"
+	"net"
 	"net/url"
+	"strconv"
 	"strings"
 
 	"golang.org/x/crypto/curve25519"
@@ -39,10 +41,6 @@ func VLESS(name, server string, u model.User, p model.RealityParams) (string, er
 	if err != nil {
 		return "", err
 	}
-	flow := p.Flow
-	if flow == "" {
-		flow = "xtls-rprx-vision"
-	}
 	q := url.Values{}
 	q.Set("encryption", "none")
 	q.Set("security", "reality")
@@ -53,9 +51,12 @@ func VLESS(name, server string, u model.User, p model.RealityParams) (string, er
 	if p.ShortID != "" {
 		q.Set("sid", p.ShortID)
 	}
-	q.Set("flow", flow)
-	return fmt.Sprintf("vless://%s@%s:%d?%s#%s",
-		u.Secret, server, p.Port, q.Encode(), url.PathEscape(name)), nil
+	if p.Flow != "" { // flow is per-user; omit it when the user has none
+		q.Set("flow", p.Flow)
+	}
+	authority := net.JoinHostPort(server, strconv.Itoa(p.Port))
+	return fmt.Sprintf("vless://%s@%s?%s#%s",
+		u.Secret, authority, q.Encode(), url.PathEscape(name)), nil
 }
 
 // Hysteria2 builds a hysteria2://... share link.
@@ -71,8 +72,9 @@ func Hysteria2(name, server string, u model.User, p model.Hy2Params) string {
 	if p.Insecure {
 		q.Set("insecure", "1")
 	}
-	return fmt.Sprintf("hysteria2://%s@%s:%d?%s#%s",
-		url.QueryEscape(u.Secret), server, p.Port, q.Encode(), url.PathEscape(name))
+	authority := net.JoinHostPort(server, strconv.Itoa(p.Port))
+	return fmt.Sprintf("hysteria2://%s@%s?%s#%s",
+		url.QueryEscape(u.Secret), authority, q.Encode(), url.PathEscape(name))
 }
 
 // Subscription returns base64(newline-joined links) — the common subscription

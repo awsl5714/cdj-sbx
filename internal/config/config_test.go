@@ -165,8 +165,14 @@ func TestRealityAndHy2Params(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if rp.Port != 443 || rp.ServerName != "www.apple.com" || rp.PrivateKey != "PRIV" || rp.ShortID != "abcd" || rp.Flow != "xtls-rprx-vision" {
+	if rp.Port != 443 || rp.ServerName != "www.apple.com" || rp.PrivateKey != "PRIV" || rp.ShortID != "abcd" {
 		t.Fatalf("reality params = %+v", rp)
+	}
+	if flow := c.UserFlow("reality-in", "alice"); flow != "xtls-rprx-vision" {
+		t.Fatalf("UserFlow(alice) = %q", flow)
+	}
+	if flow := c.UserFlow("reality-in", "ghost"); flow != "" {
+		t.Fatalf("UserFlow(ghost) should be empty, got %q", flow)
 	}
 	hp, err := c.Hy2Params("hy2-in")
 	if err != nil {

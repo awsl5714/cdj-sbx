@@ -183,6 +183,7 @@ func newLinkCmd() *cobra.Command {
 			if err != nil {
 				return &apply.Error{Kind: apply.KindInboundNotFound, Detail: err.Error(), Err: err}
 			}
+			rp.Flow = c.UserFlow("reality-in", name) // flow is per-user
 			vlessLink, err := link.VLESS(name, server, model.User{Name: name, Secret: secret}, rp)
 			if err != nil {
 				return &apply.Error{Kind: apply.KindIO, Detail: err.Error(), Err: err}

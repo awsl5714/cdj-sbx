@@ -159,13 +159,32 @@ func (c *Config) RealityParams(tag string) (model.RealityParams, error) {
 	}
 	inb := gjson.GetBytes(c.raw, fmt.Sprintf("inbounds.%d", idx))
 	r := inb.Get("tls.reality")
+	// Flow is per-user, not an inbound property — the caller fills it via
+	// UserFlow for the specific user being linked.
 	return model.RealityParams{
 		Port:       int(inb.Get("listen_port").Int()),
 		ServerName: inb.Get("tls.server_name").String(),
 		PrivateKey: r.Get("private_key").String(),
 		ShortID:    r.Get("short_id.0").String(),
-		Flow:       inb.Get("users.0.flow").String(),
 	}, nil
+}
+
+// UserFlow returns the "flow" of the named user in the tagged inbound, or "" if
+// the user or the field is absent.
+func (c *Config) UserFlow(tag, name string) string {
+	idx, ok := c.locate(tag)
+	if !ok {
+		return ""
+	}
+	flow := ""
+	gjson.GetBytes(c.raw, fmt.Sprintf("inbounds.%d.users", idx)).ForEach(func(_, v gjson.Result) bool {
+		if v.Get("name").String() == name {
+			flow = v.Get("flow").String()
+			return false
+		}
+		return true
+	})
+	return flow
 }
 
 // Hy2Params reads the link-relevant fields of a hysteria2 inbound.

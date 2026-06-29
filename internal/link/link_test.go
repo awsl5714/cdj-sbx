@@ -92,6 +92,38 @@ func TestHysteria2(t *testing.T) {
 	}
 }
 
+func TestVLESSFlowOmittedWhenEmpty(t *testing.T) {
+	p := realityParams()
+	p.Flow = ""
+	link, err := VLESS("alice", "203.0.113.10", model.User{Name: "alice", Secret: "u-alice"}, p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	u, _ := url.Parse(link)
+	if u.Query().Has("flow") {
+		t.Fatalf("flow should be omitted when empty: %s", link)
+	}
+}
+
+func TestIPv6HostsAreBracketed(t *testing.T) {
+	v, err := VLESS("alice", "2001:db8::1", model.User{Name: "alice", Secret: "u-alice"}, realityParams())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(v, "@[2001:db8::1]:443?") {
+		t.Fatalf("vless IPv6 authority not bracketed: %s", v)
+	}
+	if pu, err := url.Parse(v); err != nil || pu.Hostname() != "2001:db8::1" || pu.Port() != "443" {
+		t.Fatalf("vless IPv6 link does not parse: %v / %s", err, v)
+	}
+
+	h := Hysteria2("alice", "2001:db8::1", model.User{Name: "alice", Secret: "u-alice"},
+		model.Hy2Params{Port: 443, ObfsType: "salamander", ObfsPass: "x", Insecure: true})
+	if !strings.Contains(h, "@[2001:db8::1]:443?") {
+		t.Fatalf("hy2 IPv6 authority not bracketed: %s", h)
+	}
+}
+
 func TestSubscription(t *testing.T) {
 	links := []string{"vless://a", "hysteria2://b"}
 	sub := Subscription(links)
