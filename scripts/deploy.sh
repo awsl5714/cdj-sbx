@@ -97,7 +97,6 @@ else
   "outbounds": [ { "type": "direct", "tag": "direct" } ]
 }
 EOF
-  chmod 600 "$SB_CFG"
   echo "$PUB" > "$SB_DIR/.reality_pub"
   echo "    secrets generated, config written"
 fi
@@ -140,6 +139,15 @@ sbx --help >/dev/null 2>&1 && echo "    sbx installed: $(command -v sbx)"
 
 echo "==> 7. bring under sbx management (git baseline)"
 sbx --config "$SB_CFG" init || true
+
+# Harden permissions on every run — also re-secures older, world-readable
+# deployments (the config and the .git blobs both hold the same secrets).
+chmod 600 "$SB_CFG" 2>/dev/null || true
+[ -e "$SB_DIR/key.pem" ] && chmod 600 "$SB_DIR/key.pem"
+if [ -d "$SB_DIR/.git" ]; then
+  find "$SB_DIR/.git" -type d -exec chmod 700 {} +
+  find "$SB_DIR/.git" -type f -exec chmod 600 {} +
+fi
 
 echo "==> 8. connection info"
 IP=$(curl -fsS4 https://api.ipify.org 2>/dev/null || echo "<your-server-ip>")
