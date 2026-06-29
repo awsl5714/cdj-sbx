@@ -22,6 +22,16 @@ SBX_VERSION="${SBX_VERSION:-v0.1.0}"
 # Secret-bearing files (config, keys, git blobs) must not be world-readable.
 umask 077
 
+# Up front, re-secure any pre-existing secrets so a rerun hardens an older
+# (possibly world-readable) deployment even if a later step fails. No-ops on a
+# fresh box; new files are created 0600/0700 by the umask above.
+chmod 600 "$SB_CFG" 2>/dev/null || true
+[ -e "$SB_DIR/key.pem" ] && chmod 600 "$SB_DIR/key.pem"
+if [ -d "$SB_DIR/.git" ]; then
+  find "$SB_DIR/.git" -type d -exec chmod 700 {} +
+  find "$SB_DIR/.git" -type f -exec chmod 600 {} +
+fi
+
 echo "==> 0. dependencies"
 apt-get update -y
 apt-get install -y curl jq git openssl ufw fail2ban ca-certificates
@@ -139,15 +149,6 @@ sbx --help >/dev/null 2>&1 && echo "    sbx installed: $(command -v sbx)"
 
 echo "==> 7. bring under sbx management (git baseline)"
 sbx --config "$SB_CFG" init || true
-
-# Harden permissions on every run — also re-secures older, world-readable
-# deployments (the config and the .git blobs both hold the same secrets).
-chmod 600 "$SB_CFG" 2>/dev/null || true
-[ -e "$SB_DIR/key.pem" ] && chmod 600 "$SB_DIR/key.pem"
-if [ -d "$SB_DIR/.git" ]; then
-  find "$SB_DIR/.git" -type d -exec chmod 700 {} +
-  find "$SB_DIR/.git" -type f -exec chmod 600 {} +
-fi
 
 echo "==> 8. connection info"
 IP=$(curl -fsS4 https://api.ipify.org 2>/dev/null || echo "<your-server-ip>")
