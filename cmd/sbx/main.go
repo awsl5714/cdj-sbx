@@ -35,6 +35,15 @@ func newRootCmd() *cobra.Command {
 		Short:         "Safety-first CLI for sing-box server configs",
 		SilenceErrors: true,
 		SilenceUsage:  true,
+		// Normalize the config path so the git audit dir (filepath.Dir) and the
+		// path handed to `git -C <dir> add <path>` agree even for a relative
+		// --config like "examples/config.json".
+		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+			if abs, err := filepath.Abs(cfgPath); err == nil {
+				cfgPath = abs
+			}
+			return nil
+		},
 	}
 	pf := root.PersistentFlags()
 	pf.StringVar(&cfgPath, "config", "/etc/sing-box/config.json", "path to sing-box config.json")

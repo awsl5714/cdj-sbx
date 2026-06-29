@@ -221,9 +221,7 @@ func run(o Options, action, user, uuid string, mut mutation) (*Result, error) {
 		return res, nil
 	}
 
-	if fi, e := os.Stat(o.ConfigPath); e == nil {
-		_ = os.Chmod(tmp, fi.Mode())
-	}
+	preserveOwnerMode(tmp, o.ConfigPath)
 	if err := os.Rename(tmp, o.ConfigPath); err != nil {
 		return nil, &Error{Kind: KindIO, Detail: err.Error(), Err: err}
 	}

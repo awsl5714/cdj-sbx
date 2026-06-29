@@ -169,28 +169,37 @@ func newLinkCmd() *cobra.Command {
 			if err != nil {
 				return &apply.Error{Kind: apply.KindIO, Detail: err.Error(), Err: err}
 			}
-			users, err := c.Users("reality-in", "uuid")
+			switch format {
+			case "vless", "hy2", "sub", "all", "":
+			default:
+				return &output.UsageError{Msg: "unknown --format (vless|hy2|sub|all)"}
+			}
+
+			secret, err := userSecret(c, "reality-in", "uuid", name)
+			if err != nil {
+				return &apply.Error{Kind: apply.KindUserNotFound, Detail: err.Error(), Err: err}
+			}
+			rp, err := c.RealityParams("reality-in")
 			if err != nil {
 				return &apply.Error{Kind: apply.KindInboundNotFound, Detail: err.Error(), Err: err}
 			}
-			secret := ""
-			for _, u := range users {
-				if u.Name == name {
-					secret = u.Secret
-					break
-				}
-			}
-			if secret == "" {
-				return &apply.Error{Kind: apply.KindUserNotFound, Detail: "user not found: " + name}
-			}
-			rp, _ := c.RealityParams("reality-in")
-			hp, _ := c.Hy2Params("hy2-in")
-			u := model.User{Name: name, Secret: secret}
-			vlessLink, err := link.VLESS(name, server, u, rp)
+			vlessLink, err := link.VLESS(name, server, model.User{Name: name, Secret: secret}, rp)
 			if err != nil {
 				return &apply.Error{Kind: apply.KindIO, Detail: err.Error(), Err: err}
 			}
-			hy2Link := link.Hysteria2(name, server, u, hp)
+
+			// Build the hy2 link only when the format needs it, and only from
+			// hy2-in's own state — never assume it mirrors reality-in.
+			hy2Link := ""
+			if format != "vless" {
+				hsecret, herr := userSecret(c, "hy2-in", "password", name)
+				hp, perr := c.Hy2Params("hy2-in")
+				if herr != nil || perr != nil || hp.Port == 0 {
+					return &apply.Error{Kind: apply.KindUserNotFound,
+						Detail: "config drift: hy2-in is missing user " + name + " or the inbound is absent"}
+				}
+				hy2Link = link.Hysteria2(name, server, model.User{Name: name, Secret: hsecret}, hp)
+			}
 
 			var out []string
 			switch format {
@@ -216,6 +225,21 @@ func newLinkCmd() *cobra.Command {
 	cmd.Flags().StringVar(&server, "server", "", "public server address (host or IP) for the links")
 	cmd.Flags().StringVar(&format, "format", "all", "vless|hy2|sub|all")
 	return cmd
+}
+
+// userSecret returns the secret of the named user in the tagged inbound,
+// reading the field that holds it ("uuid" or "password").
+func userSecret(c *config.Config, tag, field, name string) (string, error) {
+	users, err := c.Users(tag, field)
+	if err != nil {
+		return "", err
+	}
+	for _, u := range users {
+		if u.Name == name {
+			return u.Secret, nil
+		}
+	}
+	return "", fmt.Errorf("user %q not found in %s", name, tag)
 }
 
 func emitMutation(action string, res *apply.Result) {

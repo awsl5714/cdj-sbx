@@ -23,15 +23,22 @@ func New(dir string, enabled bool) *Store {
 	return &Store{Dir: dir, Enabled: enabled}
 }
 
-// EnsureInit runs `git init` if Dir is not already a repo.
+// EnsureInit runs `git init` if Dir is not already a repo. It restricts the
+// .git directory to owner-only, because committed configs contain secrets
+// (UUIDs / passwords / REALITY key) and the audit repo must not be readable by
+// other local users. The chmod runs whether the repo is new or pre-existing.
 func (s *Store) EnsureInit() error {
 	if s == nil || !s.Enabled {
 		return nil
 	}
-	if _, err := os.Stat(filepath.Join(s.Dir, ".git")); err == nil {
-		return nil
+	gitDir := filepath.Join(s.Dir, ".git")
+	if _, err := os.Stat(gitDir); err != nil {
+		if err := s.run("init"); err != nil {
+			return err
+		}
 	}
-	return s.run("init")
+	_ = os.Chmod(gitDir, 0o700)
+	return nil
 }
 
 // Commit stages paths and commits them. It is a no-op if nothing is staged.
