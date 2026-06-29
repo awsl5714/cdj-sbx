@@ -148,7 +148,12 @@ rm -rf "$TMP"
 sbx --help >/dev/null 2>&1 && echo "    sbx installed: $(command -v sbx)"
 
 echo "==> 7. bring under sbx management (git baseline)"
-sbx --config "$SB_CFG" init || true
+if ! sbx --config "$SB_CFG" init; then
+  echo "ERROR: sing-box is running, but 'sbx init' failed — the config is NOT under" >&2
+  echo "       git audit/rollback. Fix the cause, then run:" >&2
+  echo "       sbx --config $SB_CFG init" >&2
+  exit 1
+fi
 
 echo "==> 8. connection info"
 IP=$(curl -fsS4 https://api.ipify.org 2>/dev/null || echo "<your-server-ip>")
