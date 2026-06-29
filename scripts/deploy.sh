@@ -19,6 +19,9 @@ SBX_VERSION="${SBX_VERSION:-v0.1.0}"
 
 [ "$(id -u)" = 0 ] || { echo "run as root: sudo bash deploy.sh"; exit 1; }
 
+# Secret-bearing files (config, keys, git blobs) must not be world-readable.
+umask 077
+
 echo "==> 0. dependencies"
 apt-get update -y
 apt-get install -y curl jq git openssl ufw fail2ban ca-certificates
@@ -94,6 +97,7 @@ else
   "outbounds": [ { "type": "direct", "tag": "direct" } ]
 }
 EOF
+  chmod 600 "$SB_CFG"
   echo "$PUB" > "$SB_DIR/.reality_pub"
   echo "    secrets generated, config written"
 fi
@@ -111,7 +115,7 @@ else
 fi
 
 echo "==> 5. firewall (detect SSH port first to avoid lockout)"
-SSH_PORTS=$(sshd -T 2>/dev/null | awk '/^port /{print $2}')
+SSH_PORTS=$(sshd -T 2>/dev/null | awk '/^port /{print $2}' || true)
 [ -z "$SSH_PORTS" ] && SSH_PORTS=$(awk '/^[Pp]ort /{print $2}' /etc/ssh/sshd_config 2>/dev/null || true)
 [ -z "$SSH_PORTS" ] && SSH_PORTS=22
 for p in $SSH_PORTS; do ufw allow "$p"/tcp >/dev/null; done
