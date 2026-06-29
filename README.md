@@ -24,6 +24,8 @@ It never reimplements sing-box's schema validation, and it never writes a config
 go install github.com/awsl5714/cdj-sbx/cmd/sbx@latest
 ```
 
+Or grab a prebuilt binary from [Releases](https://github.com/awsl5714/cdj-sbx/releases).
+
 ## Quickstart
 
 ```sh
@@ -58,9 +60,31 @@ Every command supports `--json` (stable envelope) and mutating commands support 
 | 6 | reload failed |
 | 7 | lock timeout |
 
+## Continuous integration
+
+CI (`gofmt` + `vet` + `test` + `build`) is staged at `ci/ci.yml`, outside
+`.github/workflows/` because the initial push token lacked the `workflow`
+scope. To activate GitHub Actions:
+
+```sh
+gh auth refresh -s workflow
+git mv ci/ci.yml .github/workflows/ci.yml
+git commit -m "ci: enable workflow" && git push
+```
+
+## Releases
+
+Cross-platform binaries are built with [GoReleaser](https://goreleaser.com)
+(`.goreleaser.yaml`):
+
+```sh
+git tag -a v0.1.0 -m "v0.1.0" && git push origin v0.1.0
+GITHUB_TOKEN=$(gh auth token) goreleaser release --clean
+```
+
 ## Status
 
-v1 in progress. Not yet: init-from-scratch, WARP split routing, MCP server, multi-node. See `docs/specs/`.
+v1. Not yet: init-from-scratch, WARP split routing, MCP server, multi-node. See `docs/specs/`.
 
 ## License
 
