@@ -229,16 +229,59 @@ func run(o Options, action, user, uuid string, mut mutation) (*Result, error) {
 
 	if !o.NoReload {
 		if err := o.reload(); err != nil {
-			return nil, &Error{Kind: KindReload, Detail: err.Error(), Err: err}
+			detail := err.Error()
+			if rbErr := rollbackApplied(o, old); rbErr != nil {
+				detail += "; rollback failed: " + rbErr.Error()
+			}
+			return nil, &Error{Kind: KindReload, Detail: detail, Err: err}
 		}
 	}
 	if o.Git != nil && o.Git.Enabled {
 		if err := o.Git.Commit(commitMsg(action, user), o.ConfigPath); err != nil {
-			res.Warnings = append(res.Warnings, "git commit failed: "+err.Error())
+			detail := "git commit failed: " + err.Error()
+			if rbErr := rollbackApplied(o, old); rbErr != nil {
+				detail += "; rollback failed: " + rbErr.Error()
+			} else if stageErr := o.Git.Stage(o.ConfigPath); stageErr != nil {
+				detail += "; git index restore failed: " + stageErr.Error()
+			}
+			return nil, &Error{Kind: KindIO, Detail: detail, Err: err}
 		}
 	}
 	res.Applied = true
 	return res, nil
+}
+
+func rollbackApplied(o Options, old []byte) error {
+	if err := rollbackConfig(o.ConfigPath, old); err != nil {
+		return err
+	}
+	if o.NoReload {
+		return nil
+	}
+	if err := o.reload(); err != nil {
+		return fmt.Errorf("rollback reload failed: %w", err)
+	}
+	return nil
+}
+
+func rollbackConfig(path string, old []byte) error {
+	tmp, err := writeTemp(path, old)
+	if err != nil {
+		return err
+	}
+	removeTmp := true
+	defer func() {
+		if removeTmp {
+			_ = os.Remove(tmp)
+		}
+	}()
+
+	preserveOwnerMode(tmp, path)
+	if err := os.Rename(tmp, path); err != nil {
+		return err
+	}
+	removeTmp = false
+	return nil
 }
 
 func (o Options) reload() error {

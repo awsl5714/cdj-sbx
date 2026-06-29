@@ -159,6 +159,58 @@ func TestSchemaInvalidAbortsAtomically(t *testing.T) {
 	assertNoTempFiles(t, filepath.Dir(cfg))
 }
 
+func TestReloadFailureRollsBackLiveConfig(t *testing.T) {
+	o, cfg := setupEnv(t, true)
+	o.Reload = func() error { return errors.New("reload boom") }
+	before := mustRead(t, cfg)
+
+	_, err := AddUser(o, "bob", "u-bob")
+	var ae *Error
+	if !errors.As(err, &ae) || ae.Kind != KindReload {
+		t.Fatalf("want reload_failed, got %v", err)
+	}
+	if !bytes.Equal(before, mustRead(t, cfg)) {
+		t.Fatal("live config changed despite reload failure rollback")
+	}
+	assertNoTempFiles(t, filepath.Dir(cfg))
+}
+
+func TestGitCommitFailureReturnsError(t *testing.T) {
+	o, cfg := setupEnv(t, true)
+	before := mustRead(t, cfg)
+	dir := filepath.Dir(cfg)
+	if err := o.Git.Commit("baseline", cfg); err != nil {
+		t.Fatal(err)
+	}
+	hook := filepath.Join(dir, ".git", "hooks", "pre-commit")
+	if err := os.WriteFile(hook, []byte("#!/bin/sh\nexit 1\n"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	reloads := 0
+	o.Reload = func() error {
+		reloads++
+		return nil
+	}
+
+	_, err := AddUser(o, "bob", "u-bob")
+	var ae *Error
+	if !errors.As(err, &ae) || ae.Kind != KindIO {
+		t.Fatalf("want io_error for git commit failure, got %v", err)
+	}
+	if !strings.Contains(ae.Detail, "git commit failed") {
+		t.Fatalf("error detail should mention git commit failure, got %q", ae.Detail)
+	}
+	if !bytes.Equal(before, mustRead(t, cfg)) {
+		t.Fatal("live config changed despite git commit failure rollback")
+	}
+	if reloads != 2 {
+		t.Fatalf("want apply reload and rollback reload, got %d reloads", reloads)
+	}
+	if out, err := exec.Command("git", "-C", dir, "diff", "--cached", "--quiet").CombinedOutput(); err != nil {
+		t.Fatalf("git index still has staged rollback candidate: %v: %s", err, out)
+	}
+}
+
 func TestDelUser(t *testing.T) {
 	o, cfg := setupEnv(t, true)
 	if _, err := AddUser(o, "bob", "u-bob"); err != nil {

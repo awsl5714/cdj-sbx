@@ -125,28 +125,29 @@ func (c *Config) AppendUser(tag string, fields []Field) error {
 	return nil
 }
 
-// RemoveUser deletes the named user from the tagged inbound.
+// RemoveUser deletes all users with the given name from the tagged inbound.
 func (c *Config) RemoveUser(tag, name string) error {
 	idx, ok := c.locate(tag)
 	if !ok {
 		return fmt.Errorf("%w: %s", ErrInboundNotFound, tag)
 	}
-	userIdx := -1
+	var userIdxs []int
 	gjson.GetBytes(c.raw, fmt.Sprintf("inbounds.%d.users", idx)).ForEach(func(k, v gjson.Result) bool {
 		if v.Get("name").String() == name {
-			userIdx = int(k.Int())
-			return false
+			userIdxs = append(userIdxs, int(k.Int()))
 		}
 		return true
 	})
-	if userIdx < 0 {
+	if len(userIdxs) == 0 {
 		return fmt.Errorf("%w: %s", ErrUserNotFound, name)
 	}
-	raw, err := sjson.DeleteBytes(c.raw, fmt.Sprintf("inbounds.%d.users.%d", idx, userIdx))
-	if err != nil {
-		return err
+	for i := len(userIdxs) - 1; i >= 0; i-- {
+		raw, err := sjson.DeleteBytes(c.raw, fmt.Sprintf("inbounds.%d.users.%d", idx, userIdxs[i]))
+		if err != nil {
+			return err
+		}
+		c.raw = raw
 	}
-	c.raw = raw
 	return nil
 }
 

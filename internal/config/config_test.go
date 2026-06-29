@@ -109,6 +109,24 @@ func TestAddThenRemoveRestoresUserSet(t *testing.T) {
 	}
 }
 
+func TestRemoveUserDeletesAllDuplicates(t *testing.T) {
+	c := New([]byte(testCfg))
+	_ = c.AppendUser("reality-in", realityFields("bob", "u-bob-1"))
+	_ = c.AppendUser("reality-in", realityFields("bob", "u-bob-2"))
+
+	if err := c.RemoveUser("reality-in", "bob"); err != nil {
+		t.Fatal(err)
+	}
+	for _, got := range names(t, c, "reality-in", "uuid") {
+		if got == "bob=u-bob-1" || got == "bob=u-bob-2" {
+			t.Fatalf("duplicate bob still present: %v", names(t, c, "reality-in", "uuid"))
+		}
+	}
+	if got := names(t, c, "reality-in", "uuid"); len(got) != 1 || got[0] != "alice=u-alice" {
+		t.Fatalf("reality after duplicate remove = %v", got)
+	}
+}
+
 func TestHasUser(t *testing.T) {
 	c := New([]byte(testCfg))
 	for _, tc := range []struct {

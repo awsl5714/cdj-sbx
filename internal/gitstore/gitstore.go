@@ -46,17 +46,26 @@ func (s *Store) Commit(message string, paths ...string) error {
 	if s == nil || !s.Enabled {
 		return nil
 	}
-	if err := s.EnsureInit(); err != nil {
-		return err
-	}
-	args := append([]string{"add"}, paths...)
-	if err := s.run(args...); err != nil {
+	if err := s.Stage(paths...); err != nil {
 		return err
 	}
 	if s.noStagedChanges() {
 		return nil
 	}
 	return s.run("-c", "user.name=sbx", "-c", "user.email=sbx@localhost", "commit", "-m", message)
+}
+
+// Stage adds paths to the index. It is used by rollback paths to make the git
+// index match the restored working tree after a commit fails post-add.
+func (s *Store) Stage(paths ...string) error {
+	if s == nil || !s.Enabled {
+		return nil
+	}
+	if err := s.EnsureInit(); err != nil {
+		return err
+	}
+	args := append([]string{"add"}, paths...)
+	return s.run(args...)
 }
 
 func (s *Store) noStagedChanges() bool {
