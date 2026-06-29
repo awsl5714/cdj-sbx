@@ -9,10 +9,10 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/cdj/sbx/internal/apply"
-	"github.com/cdj/sbx/internal/gitstore"
-	"github.com/cdj/sbx/internal/output"
-	"github.com/cdj/sbx/internal/validate"
+	"github.com/awsl5714/cdj-sbx/internal/apply"
+	"github.com/awsl5714/cdj-sbx/internal/gitstore"
+	"github.com/awsl5714/cdj-sbx/internal/output"
+	"github.com/awsl5714/cdj-sbx/internal/validate"
 )
 
 var (

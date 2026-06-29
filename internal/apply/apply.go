@@ -17,11 +17,11 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/cdj/sbx/internal/config"
-	"github.com/cdj/sbx/internal/gitstore"
-	"github.com/cdj/sbx/internal/invariant"
-	"github.com/cdj/sbx/internal/model"
-	"github.com/cdj/sbx/internal/validate"
+	"github.com/awsl5714/cdj-sbx/internal/config"
+	"github.com/awsl5714/cdj-sbx/internal/gitstore"
+	"github.com/awsl5714/cdj-sbx/internal/invariant"
+	"github.com/awsl5714/cdj-sbx/internal/model"
+	"github.com/awsl5714/cdj-sbx/internal/validate"
 )
 
 // Error kinds (machine-readable; see internal/output for exit-code mapping).

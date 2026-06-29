@@ -12,9 +12,9 @@ import (
 
 	"github.com/tidwall/gjson"
 
-	"github.com/cdj/sbx/internal/config"
-	"github.com/cdj/sbx/internal/gitstore"
-	"github.com/cdj/sbx/internal/validate"
+	"github.com/awsl5714/cdj-sbx/internal/config"
+	"github.com/awsl5714/cdj-sbx/internal/gitstore"
+	"github.com/awsl5714/cdj-sbx/internal/validate"
 )
 
 const testServerCfg = `{

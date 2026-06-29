@@ -21,7 +21,7 @@ It never reimplements sing-box's schema validation, and it never writes a config
 ## Install
 
 ```sh
-go install github.com/cdj/sbx/cmd/sbx@latest
+go install github.com/awsl5714/cdj-sbx/cmd/sbx@latest
 ```
 
 ## Quickstart

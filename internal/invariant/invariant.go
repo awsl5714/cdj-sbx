@@ -6,7 +6,7 @@ package invariant
 import (
 	"fmt"
 
-	"github.com/cdj/sbx/internal/model"
+	"github.com/awsl5714/cdj-sbx/internal/model"
 )
 
 // Violation is a semantic invariant failure. ID is "I1" or "I2", matching the

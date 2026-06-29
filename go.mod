@@ -1,4 +1,4 @@
-module github.com/cdj/sbx
+module github.com/awsl5714/cdj-sbx
 
 go 1.26.4
 

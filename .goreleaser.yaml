@@ -27,5 +27,5 @@ checksum:
 
 release:
   github:
-    owner: cdj
-    name: sbx
+    owner: awsl5714
+    name: cdj-sbx

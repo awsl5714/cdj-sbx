@@ -15,7 +15,7 @@ import (
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
 
-	"github.com/cdj/sbx/internal/model"
+	"github.com/awsl5714/cdj-sbx/internal/model"
 )
 
 var (

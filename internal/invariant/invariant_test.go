@@ -3,7 +3,7 @@ package invariant
 import (
 	"testing"
 
-	"github.com/cdj/sbx/internal/model"
+	"github.com/awsl5714/cdj-sbx/internal/model"
 )
 
 func u(name, secret string) model.User { return model.User{Name: name, Secret: secret} }

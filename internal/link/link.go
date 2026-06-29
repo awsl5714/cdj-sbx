@@ -13,7 +13,7 @@ import (
 
 	"golang.org/x/crypto/curve25519"
 
-	"github.com/cdj/sbx/internal/model"
+	"github.com/awsl5714/cdj-sbx/internal/model"
 )
 
 // DerivePublicKey computes the REALITY public key (base64url, unpadded) from the

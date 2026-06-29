@@ -8,11 +8,11 @@ import (
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 
-	"github.com/cdj/sbx/internal/apply"
-	"github.com/cdj/sbx/internal/config"
-	"github.com/cdj/sbx/internal/link"
-	"github.com/cdj/sbx/internal/model"
-	"github.com/cdj/sbx/internal/output"
+	"github.com/awsl5714/cdj-sbx/internal/apply"
+	"github.com/awsl5714/cdj-sbx/internal/config"
+	"github.com/awsl5714/cdj-sbx/internal/link"
+	"github.com/awsl5714/cdj-sbx/internal/model"
+	"github.com/awsl5714/cdj-sbx/internal/output"
 )
 
 func newInitCmd() *cobra.Command {

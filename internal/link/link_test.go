@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/cdj/sbx/internal/model"
+	"github.com/awsl5714/cdj-sbx/internal/model"
 )
 
 // RFC 7748 §6.1 X25519 test vector validates the curve operation underlying
