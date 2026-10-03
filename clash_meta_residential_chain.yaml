@@ -1,0 +1,62 @@
+mixed-port: 7890
+allow-lan: false
+mode: rule
+log-level: info
+
+dns:
+  enable: true
+  enhanced-mode: fake-ip
+  nameserver:
+    - 1.1.1.1
+    - 8.8.8.8
+
+proxies:
+  - name: user1-reality
+    type: vless
+    server: 207.58.174.166
+    port: 443
+    uuid: 436df25c-b85c-4655-932f-7adb97311719
+    network: tcp
+    tls: true
+    udp: true
+    flow: xtls-rprx-vision
+    servername: www.apple.com
+    client-fingerprint: chrome
+    reality-opts:
+      public-key: mw7wYKsCUv26TE98o6nmp5up-sAq3C-g0IOIaE2AOXQ
+      short-id: a79a94a61aec3f9d
+
+  - name: user1-hy2
+    type: hysteria2
+    server: 207.58.174.166
+    port: 443
+    password: 436df25c-b85c-4655-932f-7adb97311719
+    obfs: salamander
+    obfs-password: JleEr4wNgwsA1fCSGaCfa8w
+    skip-cert-verify: true
+
+  - name: residential-us
+    type: http
+    server: 138.226.64.224
+    port: 7915
+    username: dtbzyxsw
+    password: u0g2k6jeekx6
+    dialer-proxy: ENTRY
+
+proxy-groups:
+  - name: ENTRY
+    type: select
+    proxies:
+      - user1-reality
+      - user1-hy2
+
+  - name: PROXY
+    type: select
+    proxies:
+      - residential-us
+      - user1-reality
+      - user1-hy2
+      - DIRECT
+
+rules:
+  - MATCH,PROXY
